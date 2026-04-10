@@ -5,7 +5,8 @@ const qrcode = require('qrcode-terminal');
 const aniversarios = [
   { nome: "Maria", data: "10-04" },
   { nome: "João", data: "15-04" },
-  { nome: "Lucas", data: "10-04" }
+  { nome: "Lucas", data: "10-04" },
+  { nome: "Thiago", data: "11-04" }
 ];
 
 // 💬 ID DO GRUPO
@@ -16,7 +17,7 @@ let enviadosHoje = new Set();
 
 console.log("🚀 Iniciando bot de aniversários...");
 
-// 🤖 CONFIG DO CLIENTE (corrigido para servidor)
+// 🤖 CONFIG DO CLIENTE
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
@@ -48,7 +49,7 @@ client.on('ready', () => {
   // roda imediatamente
   verificarAniversarios();
 
-  // loop a cada 1 minuto
+  // loop seguro a cada 1 minuto
   setInterval(verificarAniversarios, 60 * 1000);
 
   // reset diário
