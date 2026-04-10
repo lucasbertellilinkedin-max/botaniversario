@@ -34,7 +34,7 @@ client.on('ready', async () => {
   console.log('✅ Bot conectado!');
 
   // ⏰ RODA TODO DIA ÀS 20:40
-  cron.schedule('40 20 * * *', async () => {
+  cron.schedule('58 21 * * *', async () => {
     console.log("⏰ Verificando aniversários...");
 
     const hoje = new Date();
