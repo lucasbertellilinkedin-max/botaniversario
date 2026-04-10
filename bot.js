@@ -15,14 +15,14 @@ const aniversarios = [
 // 📌 GRUPO
 const GRUPO_ID = "120363043961363001@g.us";
 
-// 🤖 CLIENTE WHATSAPP (OTIMIZADO PRA RAILWAY)
+// 🤖 CLIENTE WHATSAPP
 const client = new Client({
   authStrategy: new LocalAuth({
     dataPath: './session'
   }),
   puppeteer: {
     headless: true,
-    protocolTimeout: 180000, // 🔥 evita timeout
+    protocolTimeout: 180000,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -39,10 +39,10 @@ client.on('qr', (qr) => {
   qrcode.generate(qr, { small: true });
 });
 
-// 🟢 ESTADO DO BOT
+// 🟢 STATUS
 let botPronto = false;
 
-// 🧠 CONTROLE DIÁRIO
+// 🧠 CONTROLE DE DUPLICAÇÃO
 let enviadosHoje = [];
 let ultimoDia = null;
 
@@ -64,7 +64,7 @@ client.on('disconnected', reason => {
   console.log("⚠️ Desconectado:", reason);
 });
 
-// 🔥 FUNÇÃO PRINCIPAL OTIMIZADA
+// 🔥 FUNÇÃO PRINCIPAL (COM CONFIRMAÇÃO REAL)
 async function verificarAniversarios() {
   if (!botPronto) return;
 
@@ -75,7 +75,7 @@ async function verificarAniversarios() {
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const hoje = `${dia}-${mes}`;
 
-    // reset diário automático
+    // reset diário
     if (ultimoDia !== hoje) {
       enviadosHoje = [];
       ultimoDia = hoje;
@@ -89,12 +89,15 @@ async function verificarAniversarios() {
         try {
           const mensagem = `🎉 Hoje é aniversário do(a) ${pessoa.nome}!`;
 
-          // 🚀 ENVIO DIRETO (SEM getChatById = MAIS RÁPIDO)
-          await client.sendMessage(GRUPO_ID, mensagem);
+          const msg = await client.sendMessage(GRUPO_ID, mensagem);
 
-          enviadosHoje.push(pessoa.nome);
-
-          console.log(`✅ Enviado para ${pessoa.nome}`);
+          // 🔥 CONFIRMAÇÃO REAL
+          if (msg && msg.id) {
+            console.log(`✅ Enviado com sucesso para ${pessoa.nome}`);
+            enviadosHoje.push(pessoa.nome);
+          } else {
+            console.log(`❌ Falha no envio para ${pessoa.nome}`);
+          }
 
         } catch (err) {
           console.log("❌ Erro ao enviar:", err.message);
