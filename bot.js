@@ -7,20 +7,20 @@ console.log("🚀 Iniciando bot...");
 // ✅ ID DO GRUPO
 const GRUPO_ID = "120363043961363001@g.us";
 
-// 🎂 LISTA DE ANIVERSÁRIOS (edita aqui)
+// 🎂 LISTA DE ANIVERSÁRIOS
 const aniversarios = [
   { nome: "Maria", data: "10-04" },
   { nome: "João", data: "15-04" },
-  { nome: "Pedro", data: "09-04" } // exemplo hoje
+  { nome: "Pedro", data: "09-04" }
 ];
 
+// ✅ CLIENTE (CORRIGIDO)
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   }
-});
 });
 
 // 📱 QR
@@ -33,7 +33,7 @@ client.on('qr', qr => {
 client.on('ready', async () => {
   console.log('✅ Bot conectado!');
 
-  // ⏰ RODA TODO DIA ÀS 09:00
+  // ⏰ RODA TODO DIA ÀS 20:40
   cron.schedule('40 20 * * *', async () => {
     console.log("⏰ Verificando aniversários...");
 
@@ -57,7 +57,6 @@ client.on('ready', async () => {
         }
       }
     }
-
   });
 });
 
