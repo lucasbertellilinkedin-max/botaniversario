@@ -5,6 +5,7 @@ const qrcode = require('qrcode-terminal');
 const aniversarios = [
   { nome: "Maria", data: "10-04" },
   { nome: "João", data: "15-04" }
+  { nome: "Lucas", data: "10-04" }
 ];
 
 // 💬 ID DO GRUPO
