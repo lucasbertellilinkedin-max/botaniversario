@@ -1,114 +1,73 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const cron = require('node-cron');
 
 console.log("🚀 Iniciando bot...");
 
-process.env.TZ = "America/Sao_Paulo";
-
-// 🎂 ANIVERSÁRIOS
+// 🎂 LISTA DE ANIVERSÁRIOS
 const aniversarios = [
   { nome: "Maria", data: "10-04" },
   { nome: "João", data: "15-04" },
-  { nome: "Pedro", data: "09-04" }
+  { nome: "Pedro", data: "09-04" } // exemplo
 ];
 
-// 📌 GRUPO
 const GRUPO_ID = "120363043961363001@g.us";
 
-// 🤖 CLIENTE WHATSAPP
 const client = new Client({
-  authStrategy: new LocalAuth({
-    dataPath: './session'
-  }),
-  puppeteer: {
-    headless: true,
-    protocolTimeout: 180000,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--single-process'
-    ]
-  }
+  authStrategy: new LocalAuth(),
+  puppeteer: { headless: false }
 });
 
 // 📱 QR CODE
-client.on('qr', (qr) => {
-  const qrcode = require('qrcode-terminal');
-  console.log("📱 Escaneie o QR abaixo:");
+client.on('qr', qr => {
+  console.log("📱 Escaneie o QR Code:");
   qrcode.generate(qr, { small: true });
 });
 
-// 🟢 STATUS
-let botPronto = false;
+// ✅ BOT PRONTO
+client.on('ready', async () => {
+  console.log('✅ Bot conectado!');
 
-// 🧠 CONTROLE DE DUPLICAÇÃO
-let enviadosHoje = [];
-let ultimoDia = null;
+  // 📋 LISTAR GRUPOS (opcional)
+  const chats = await client.getChats();
 
-// ✅ READY
-client.on('ready', () => {
-  console.log("✅ Bot conectado!");
-  botPronto = true;
-
-  verificarAniversarios();
-  setInterval(verificarAniversarios, 60 * 1000);
-});
-
-// ❌ ERROS
-client.on('auth_failure', msg => {
-  console.log("❌ Falha na autenticação:", msg);
-});
-
-client.on('disconnected', reason => {
-  console.log("⚠️ Desconectado:", reason);
-});
-
-// 🔥 FUNÇÃO PRINCIPAL (COM CONFIRMAÇÃO REAL)
-async function verificarAniversarios() {
-  if (!botPronto) return;
-
-  try {
-    const agora = new Date();
-
-    const dia = String(agora.getDate()).padStart(2, '0');
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
-    const hoje = `${dia}-${mes}`;
-
-    // reset diário
-    if (ultimoDia !== hoje) {
-      enviadosHoje = [];
-      ultimoDia = hoje;
+  console.log("\n📋 LISTA DE GRUPOS:");
+  chats.forEach(chat => {
+    if (chat.isGroup) {
+      console.log(`👥 Nome: ${chat.name}`);
+      console.log(`🆔 ID: ${chat.id._serialized}`);
+      console.log("----------------------");
     }
+  });
 
-    console.log("🔎 Verificando aniversários...");
+  // ⏰ RODA TODO DIA ÀS 09:00
+  cron.schedule('0 9 * * *', async () => {
+    console.log("⏰ Verificando aniversários...");
+
+    const hoje = new Date();
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const hojeFormatado = `${dia}-${mes}`;
 
     for (let pessoa of aniversarios) {
-      if (pessoa.data === hoje && !enviadosHoje.includes(pessoa.nome)) {
+      if (pessoa.data === hojeFormatado) {
+
+        const mensagem =
+          `🎉 Hoje é aniversário do(a) ${pessoa.nome}!\n` +
+          `Que Deus abençoe sua vida 🙏`;
 
         try {
-          const mensagem = `🎉 Hoje é aniversário do(a) ${pessoa.nome}!`;
+          const chat = await client.getChatById(GRUPO_ID);
+          await chat.sendMessage(mensagem);
 
-          const msg = await client.sendMessage(GRUPO_ID, mensagem);
-
-          // 🔥 CONFIRMAÇÃO REAL
-          if (msg && msg.id) {
-            console.log(`✅ Enviado com sucesso para ${pessoa.nome}`);
-            enviadosHoje.push(pessoa.nome);
-          } else {
-            console.log(`❌ Falha no envio para ${pessoa.nome}`);
-          }
-
-        } catch (err) {
-          console.log("❌ Erro ao enviar:", err.message);
+          console.log(`✅ Mensagem enviada para ${pessoa.nome}`);
+        } catch (erro) {
+          console.log("❌ Erro:", erro);
         }
       }
     }
+  });
+});
 
-  } catch (err) {
-    console.log("❌ Erro geral:", err.message);
-  }
-}
-
-// ▶️ INICIAR BOT
+// ▶️ INICIAR
 client.initialize();
