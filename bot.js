@@ -1,4 +1,5 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 
 console.log("🚀 Iniciando bot...");
@@ -13,7 +14,7 @@ const aniversarios = [
   { nome: "Pedro", data: "09-04" }
 ];
 
-// ✅ CLIENTE (CONFIGURADO PRA RAILWAY)
+// ✅ CLIENTE
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
@@ -22,10 +23,10 @@ const client = new Client({
   }
 });
 
-// 📱 QR EM LINK (FUNCIONA NO RAILWAY)
-client.on('qr', qr => {
-  console.log("📱 Escaneie o QR neste link:");
-  console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qr}`);
+// 📱 QR CODE (CORRIGIDO)
+client.on('qr', (qr) => {
+  console.log("📱 Escaneie o QR abaixo:");
+  qrcode.generate(qr, { small: true });
 });
 
 // ✅ CONECTADO
