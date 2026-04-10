@@ -15,58 +15,56 @@ const aniversarios = [
 // 📌 GRUPO
 const GRUPO_ID = "120363043961363001@g.us";
 
-// 🤖 CLIENTE WHATSAPP
+// 🤖 CLIENTE WHATSAPP (OTIMIZADO PRA RAILWAY)
 const client = new Client({
   authStrategy: new LocalAuth({
     dataPath: './session'
   }),
   puppeteer: {
     headless: true,
+    protocolTimeout: 180000, // 🔥 evita timeout
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage'
+      '--disable-dev-shm-usage',
+      '--single-process'
     ]
   }
 });
 
-// 📱 QR CODE (CORRETO)
+// 📱 QR CODE
 client.on('qr', (qr) => {
   const qrcode = require('qrcode-terminal');
   console.log("📱 Escaneie o QR abaixo:");
   qrcode.generate(qr, { small: true });
 });
 
-// ❌ ERROS DE AUTENTICAÇÃO
-client.on('auth_failure', msg => {
-  console.log("❌ Falha na autenticação:", msg);
-});
-
-// ⚠️ DESCONECTADO
-client.on('disconnected', reason => {
-  console.log("⚠️ Desconectado:", reason);
-});
-
-// 🟢 CONTROLE DE ESTADO (IMPORTANTE)
+// 🟢 ESTADO DO BOT
 let botPronto = false;
 
-// 🧠 CONTROLE DE DUPLICAÇÃO
+// 🧠 CONTROLE DIÁRIO
 let enviadosHoje = [];
 let ultimoDia = null;
 
-// ✅ QUANDO BOT ESTÁ PRONTO
+// ✅ READY
 client.on('ready', () => {
   console.log("✅ Bot conectado!");
   botPronto = true;
 
-  // roda imediatamente
   verificarAniversarios();
-
-  // loop seguro
   setInterval(verificarAniversarios, 60 * 1000);
 });
 
-// 🔥 FUNÇÃO PRINCIPAL (SEGURA)
+// ❌ ERROS
+client.on('auth_failure', msg => {
+  console.log("❌ Falha na autenticação:", msg);
+});
+
+client.on('disconnected', reason => {
+  console.log("⚠️ Desconectado:", reason);
+});
+
+// 🔥 FUNÇÃO PRINCIPAL OTIMIZADA
 async function verificarAniversarios() {
   if (!botPronto) return;
 
@@ -77,7 +75,7 @@ async function verificarAniversarios() {
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const hoje = `${dia}-${mes}`;
 
-    // reset diário
+    // reset diário automático
     if (ultimoDia !== hoje) {
       enviadosHoje = [];
       ultimoDia = hoje;
@@ -89,17 +87,17 @@ async function verificarAniversarios() {
       if (pessoa.data === hoje && !enviadosHoje.includes(pessoa.nome)) {
 
         try {
-          const chat = await client.getChatById(GRUPO_ID);
+          const mensagem = `🎉 Hoje é aniversário do(a) ${pessoa.nome}!`;
 
-          await chat.sendMessage(
-            `🎉 Hoje é aniversário do(a) ${pessoa.nome}!`
-          );
+          // 🚀 ENVIO DIRETO (SEM getChatById = MAIS RÁPIDO)
+          await client.sendMessage(GRUPO_ID, mensagem);
 
           enviadosHoje.push(pessoa.nome);
 
           console.log(`✅ Enviado para ${pessoa.nome}`);
+
         } catch (err) {
-          console.log("❌ Erro ao enviar mensagem:", err.message);
+          console.log("❌ Erro ao enviar:", err.message);
         }
       }
     }
