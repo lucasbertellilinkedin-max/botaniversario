@@ -1,20 +1,21 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
-// LISTA DE ANIVERSÁRIOS
+// 🎂 LISTA DE ANIVERSÁRIOS
 const aniversarios = [
   { nome: "Maria", data: "10-04" },
   { nome: "João", data: "15-04" }
 ];
 
+// 💬 ID DO GRUPO
 let GRUPO_ID = "120363043961363001@g.us";
 
-// controle anti-flood
+// 🚫 controle anti-flood
 let enviadosHoje = new Set();
 
-// CONFIG DO CLIENTE
 console.log("🚀 Iniciando bot de aniversários...");
 
+// 🤖 CONFIG DO CLIENTE
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
@@ -32,19 +33,31 @@ const client = new Client({
   }
 });
 
-// QR CODE
+// 📱 QR CODE
 client.on('qr', qr => {
-  console.log("📱 QR Code gerado! Escaneie para conectar:");
+  console.log("📱 Escaneie o QR Code abaixo:");
   qrcode.generate(qr, { small: true });
 });
 
-// BOT CONECTADO
+// 🔌 BOT PRONTO
 client.on('ready', () => {
   console.log("✅ Bot conectado com sucesso!");
-  console.log("🔍 Iniciando monitoramento de aniversários...");
+  console.log("🔍 Monitorando aniversários...");
+
+  // roda imediatamente
+  verificarAniversarios();
+
+  // loop seguro a cada 1 minuto
+  setInterval(verificarAniversarios, 60 * 1000);
+
+  // reset diário
+  setInterval(() => {
+    enviadosHoje.clear();
+    console.log("🔄 Reset diário concluído");
+  }, 24 * 60 * 60 * 1000);
 });
 
-// FUNÇÃO DE VERIFICAÇÃO
+// 🔎 FUNÇÃO DE VERIFICAÇÃO
 async function verificarAniversarios() {
   console.log("🔎 Verificando aniversários...");
 
@@ -67,11 +80,14 @@ async function verificarAniversarios() {
 
       console.log(`🎉 Enviando mensagem para ${pessoa.nome}...`);
 
-      await client.sendMessage(GRUPO_ID, mensagem);
+      try {
+        await client.sendMessage(GRUPO_ID, mensagem);
+        console.log(`✅ Mensagem enviada com sucesso para ${pessoa.nome}`);
 
-      console.log(`✅ Mensagem enviada com sucesso para ${pessoa.nome}`);
-
-      enviadosHoje.add(chave);
+        enviadosHoje.add(chave);
+      } catch (err) {
+        console.log("❌ Erro ao enviar mensagem:", err.message);
+      }
     }
   }
 
@@ -80,14 +96,5 @@ async function verificarAniversarios() {
   }
 }
 
-// RODA A CADA 1 MINUTO
-setInterval(verificarAniversarios, 60 * 1000);
-
-// RESET DIÁRIO
-setInterval(() => {
-  enviadosHoje.clear();
-  console.log("🔄 Reset diário concluído (lista de enviados limpa)");
-}, 24 * 60 * 60 * 1000);
-
-// INICIAR BOT
+// 🚀 INICIAR BOT
 client.initialize();
