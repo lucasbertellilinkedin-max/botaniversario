@@ -1,5 +1,7 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const QRCode = require('qrcode');
+const fs = require('fs');
 
 // 🎂 LISTA DE ANIVERSÁRIOS
 const aniversarios = [
@@ -35,10 +37,19 @@ const client = new Client({
   }
 });
 
-// 📱 QR CODE
-client.on('qr', qr => {
-  console.log("📱 Escaneie o QR Code abaixo:");
-  qrcode.generate(qr, { small: true });
+// 📱 QR CODE (AGORA EM IMAGEM)
+client.on('qr', async (qr) => {
+  console.clear();
+  console.log("📱 QR Code gerado! Abrindo imagem...");
+
+  // salva imagem do QR
+  await QRCode.toFile('qr.png', qr);
+
+  console.log("✅ QR salvo como qr.png");
+  console.log("👉 Abra o arquivo e escaneie com o WhatsApp");
+
+  // opcional: também mostra no terminal
+  qrcode.generate(qr, { small: false });
 });
 
 // 🔌 BOT PRONTO
@@ -46,13 +57,10 @@ client.on('ready', () => {
   console.log("✅ Bot conectado com sucesso!");
   console.log("🔍 Monitorando aniversários...");
 
-  // roda imediatamente
   verificarAniversarios();
 
-  // loop seguro a cada 1 minuto
   setInterval(verificarAniversarios, 60 * 1000);
 
-  // reset diário
   setInterval(() => {
     enviadosHoje.clear();
     console.log("🔄 Reset diário concluído");
