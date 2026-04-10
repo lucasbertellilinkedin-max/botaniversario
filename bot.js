@@ -1,7 +1,5 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const QRCode = require('qrcode');
-const fs = require('fs');
 
 // 🎂 LISTA DE ANIVERSÁRIOS
 const aniversarios = [
@@ -37,18 +35,10 @@ const client = new Client({
   }
 });
 
-// 📱 QR CODE (AGORA EM IMAGEM)
-client.on('qr', async (qr) => {
+// 📱 QR CODE (SÓ TERMINAL, SEM qrcode LIB)
+client.on('qr', qr => {
   console.clear();
-  console.log("📱 QR Code gerado! Abrindo imagem...");
-
-  // salva imagem do QR
-  await QRCode.toFile('qr.png', qr);
-
-  console.log("✅ QR salvo como qr.png");
-  console.log("👉 Abra o arquivo e escaneie com o WhatsApp");
-
-  // opcional: também mostra no terminal
+  console.log("📱 Escaneie o QR Code abaixo:");
   qrcode.generate(qr, { small: false });
 });
 
