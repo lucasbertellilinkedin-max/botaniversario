@@ -7,7 +7,6 @@ const aniversarios = [
   { nome: "João", data: "15-04" },
   { nome: "Lucas", data: "10-04" }
 ];
-];
 
 // 💬 ID DO GRUPO
 let GRUPO_ID = "120363043961363001@g.us";
@@ -17,7 +16,7 @@ let enviadosHoje = new Set();
 
 console.log("🚀 Iniciando bot de aniversários...");
 
-// 🤖 CONFIG DO CLIENTE
+// 🤖 CONFIG DO CLIENTE (corrigido para servidor)
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
@@ -49,7 +48,7 @@ client.on('ready', () => {
   // roda imediatamente
   verificarAniversarios();
 
-  // loop seguro a cada 1 minuto
+  // loop a cada 1 minuto
   setInterval(verificarAniversarios, 60 * 1000);
 
   // reset diário
