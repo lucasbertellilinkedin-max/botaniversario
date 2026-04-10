@@ -4,6 +4,9 @@ const cron = require('node-cron');
 
 console.log("🚀 Iniciando bot...");
 
+
+process.env.TZ = "America/Sao_Paulo";
+
 // ✅ ID DO GRUPO
 const GRUPO_ID = "120363043961363001@g.us";
 
@@ -34,7 +37,7 @@ client.on('ready', async () => {
   console.log('✅ Bot conectado!');
 
   // ⏰ RODA TODO DIA ÀS 20:40
-  cron.schedule('58 21 * * *', async () => {
+  cron.schedule('04 22 * * *', async () => {
     console.log("⏰ Verificando aniversários...");
 
     const hoje = new Date();
