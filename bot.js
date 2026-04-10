@@ -15,7 +15,7 @@ const aniversarios = [
 // 📌 GRUPO
 const GRUPO_ID = "120363043961363001@g.us";
 
-// 🤖 CLIENTE WHATSAPP (ESTÁVEL)
+// 🤖 CLIENTE WHATSAPP
 const client = new Client({
   authStrategy: new LocalAuth({
     dataPath: './session'
@@ -30,35 +30,46 @@ const client = new Client({
   }
 });
 
-// 📱 QR CODE (CORRETO E SEM LINK)
+// 📱 QR CODE (CORRETO)
 client.on('qr', (qr) => {
+  const qrcode = require('qrcode-terminal');
   console.log("📱 Escaneie o QR abaixo:");
   qrcode.generate(qr, { small: true });
 });
 
-// ✅ CONECTADO
-client.on('ready', () => {
-  console.log("✅ Bot conectado!");
-
-  verificarAniversarios(); // roda imediatamente
-  setInterval(verificarAniversarios, 60 * 1000); // roda a cada 1 minuto
-});
-
-// ❌ ERROS
+// ❌ ERROS DE AUTENTICAÇÃO
 client.on('auth_failure', msg => {
   console.log("❌ Falha na autenticação:", msg);
 });
 
+// ⚠️ DESCONECTADO
 client.on('disconnected', reason => {
   console.log("⚠️ Desconectado:", reason);
 });
+
+// 🟢 CONTROLE DE ESTADO (IMPORTANTE)
+let botPronto = false;
 
 // 🧠 CONTROLE DE DUPLICAÇÃO
 let enviadosHoje = [];
 let ultimoDia = null;
 
-// 🔥 FUNÇÃO PRINCIPAL
+// ✅ QUANDO BOT ESTÁ PRONTO
+client.on('ready', () => {
+  console.log("✅ Bot conectado!");
+  botPronto = true;
+
+  // roda imediatamente
+  verificarAniversarios();
+
+  // loop seguro
+  setInterval(verificarAniversarios, 60 * 1000);
+});
+
+// 🔥 FUNÇÃO PRINCIPAL (SEGURA)
 async function verificarAniversarios() {
+  if (!botPronto) return;
+
   try {
     const agora = new Date();
 
@@ -76,22 +87,25 @@ async function verificarAniversarios() {
 
     for (let pessoa of aniversarios) {
       if (pessoa.data === hoje && !enviadosHoje.includes(pessoa.nome)) {
-        const mensagem = `🎉 Hoje é aniversário do(a) ${pessoa.nome}!`;
 
         try {
           const chat = await client.getChatById(GRUPO_ID);
-          await chat.sendMessage(mensagem);
+
+          await chat.sendMessage(
+            `🎉 Hoje é aniversário do(a) ${pessoa.nome}!`
+          );
 
           enviadosHoje.push(pessoa.nome);
 
           console.log(`✅ Enviado para ${pessoa.nome}`);
         } catch (err) {
-          console.log("❌ Erro ao enviar:", err);
+          console.log("❌ Erro ao enviar mensagem:", err.message);
         }
       }
     }
+
   } catch (err) {
-    console.log("❌ Erro geral:", err);
+    console.log("❌ Erro geral:", err.message);
   }
 }
 
