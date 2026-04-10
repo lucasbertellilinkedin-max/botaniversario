@@ -12,70 +12,84 @@ const aniversarios = [
   { nome: "Pedro", data: "09-04" }
 ];
 
+// 📌 ID DO GRUPO
 const GRUPO_ID = "120363043961363001@g.us";
 
+// 🤖 CLIENTE WHATSAPP (ESTÁVEL PRA RAILWAY)
 const client = new Client({
   authStrategy: new LocalAuth({
     dataPath: './session'
   }),
   puppeteer: {
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage'
+    ]
   }
 });
 
-// 📱 QR CODE
+// 📱 QR CODE CORRETO (NUNCA USA LINK)
 client.on('qr', (qr) => {
-  console.log("📱 Escaneie o QR:");
+  console.log("📱 Escaneie o QR abaixo:");
   qrcode.generate(qr, { small: true });
 });
 
-// ✅ EVITA DUPLICAR MENSAGEM NO MESMO DIA
+// ✅ STATUS CONEXÃO
+client.on('ready', () => {
+  console.log("✅ Bot conectado com sucesso!");
+
+  verificarAniversarios(); // roda na hora
+  setInterval(verificarAniversarios, 60 * 1000); // checa a cada 1 minuto
+});
+
+// ❌ ERROS
+client.on('auth_failure', msg => {
+  console.log("❌ Falha na autenticação:", msg);
+});
+
+client.on('disconnected', reason => {
+  console.log("⚠️ Desconectado:", reason);
+});
+
+// 🧠 CONTROLE PRA NÃO REPETIR MENSAGEM
 let enviadosHoje = [];
 let ultimoDia = null;
 
-// 🔥 FUNÇÃO DE VERIFICAÇÃO RÁPIDA
+// 🔥 FUNÇÃO PRINCIPAL
 async function verificarAniversarios() {
-  const agora = new Date();
+  try {
+    const agora = new Date();
 
-  const dia = String(agora.getDate()).padStart(2, '0');
-  const mes = String(agora.getMonth() + 1).padStart(2, '0');
-  const hoje = `${dia}-${mes}`;
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const hoje = `${dia}-${mes}`;
 
-  // reset diário automático
-  if (ultimoDia !== hoje) {
-    enviadosHoje = [];
-    ultimoDia = hoje;
-  }
+    // reset diário automático
+    if (ultimoDia !== hoje) {
+      enviadosHoje = [];
+      ultimoDia = hoje;
+    }
 
-  for (let pessoa of aniversarios) {
-    if (pessoa.data === hoje && !enviadosHoje.includes(pessoa.nome)) {
-      try {
+    console.log("🔎 Verificando aniversários...");
+
+    for (let pessoa of aniversarios) {
+      if (pessoa.data === hoje && !enviadosHoje.includes(pessoa.nome)) {
+        const mensagem = `🎉 Hoje é aniversário do(a) ${pessoa.nome}!`;
+
         const chat = await client.getChatById(GRUPO_ID);
-
-        await chat.sendMessage(
-          `🎉 Hoje é aniversário do(a) ${pessoa.nome}!`
-        );
+        await chat.sendMessage(mensagem);
 
         enviadosHoje.push(pessoa.nome);
 
         console.log(`✅ Enviado para ${pessoa.nome}`);
-      } catch (err) {
-        console.log("❌ Erro:", err);
       }
     }
+  } catch (err) {
+    console.log("❌ Erro na verificação:", err);
   }
 }
 
-// ⚡ RODA ASSIM QUE CONECTA
-client.on('ready', async () => {
-  console.log("✅ Bot conectado!");
-
-  // roda imediatamente
-  verificarAniversarios();
-
-  // depois roda a cada 30 segundos (rápido e leve)
-  setInterval(verificarAniversarios, 30 * 1000);
-});
-
+// ▶️ INICIAR BOT
 client.initialize();
