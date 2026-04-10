@@ -1,73 +1,81 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const cron = require('node-cron');
 
-console.log("🚀 Iniciando bot...");
-
-// 🎂 LISTA DE ANIVERSÁRIOS
+// LISTA DE ANIVERSÁRIOS
 const aniversarios = [
   { nome: "Maria", data: "10-04" },
-  { nome: "João", data: "15-04" },
-  { nome: "Pedro", data: "09-04" } // exemplo
+  { nome: "João", data: "15-04" }
 ];
 
-const GRUPO_ID = "120363043961363001@g.us";
+let GRUPO_ID = "120363043961363001@g.us";
+
+// controle anti-flood
+let enviadosHoje = new Set();
+
+// CONFIG DO CLIENTE
+console.log("🚀 Iniciando bot de aniversários...");
 
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: { headless: false }
 });
 
-// 📱 QR CODE
+// QR CODE
 client.on('qr', qr => {
-  console.log("📱 Escaneie o QR Code:");
+  console.log("📱 QR Code gerado! Escaneie para conectar:");
   qrcode.generate(qr, { small: true });
 });
 
-// ✅ BOT PRONTO
-client.on('ready', async () => {
-  console.log('✅ Bot conectado!');
-
-  // 📋 LISTAR GRUPOS (opcional)
-  const chats = await client.getChats();
-
-  console.log("\n📋 LISTA DE GRUPOS:");
-  chats.forEach(chat => {
-    if (chat.isGroup) {
-      console.log(`👥 Nome: ${chat.name}`);
-      console.log(`🆔 ID: ${chat.id._serialized}`);
-      console.log("----------------------");
-    }
-  });
-
-  // ⏰ RODA TODO DIA ÀS 09:00
-  cron.schedule('0 9 * * *', async () => {
-    console.log("⏰ Verificando aniversários...");
-
-    const hoje = new Date();
-    const dia = String(hoje.getDate()).padStart(2, '0');
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-    const hojeFormatado = `${dia}-${mes}`;
-
-    for (let pessoa of aniversarios) {
-      if (pessoa.data === hojeFormatado) {
-
-        const mensagem =
-          `🎉 Hoje é aniversário do(a) ${pessoa.nome}!\n` +
-          `Que Deus abençoe sua vida 🙏`;
-
-        try {
-          const chat = await client.getChatById(GRUPO_ID);
-          await chat.sendMessage(mensagem);
-
-          console.log(`✅ Mensagem enviada para ${pessoa.nome}`);
-        } catch (erro) {
-          console.log("❌ Erro:", erro);
-        }
-      }
-    }
-  });
+// BOT CONECTADO
+client.on('ready', () => {
+  console.log("✅ Bot conectado com sucesso!");
+  console.log("🔍 Iniciando monitoramento de aniversários...");
 });
 
-// ▶️ INICIAR
+// FUNÇÃO DE VERIFICAÇÃO
+async function verificarAniversarios() {
+  console.log("🔎 Verificando aniversários...");
+
+  const hoje = new Date();
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const hojeFormatado = `${dia}-${mes}`;
+
+  let encontrou = false;
+
+  for (let pessoa of aniversarios) {
+    const chave = pessoa.nome + hojeFormatado;
+
+    if (pessoa.data === hojeFormatado && !enviadosHoje.has(chave)) {
+      encontrou = true;
+
+      const mensagem =
+        `🎉 Hoje é aniversário da ${pessoa.nome}!\n` +
+        `Que Deus abençoe sua vida 🙏`;
+
+      console.log(`🎉 Enviando mensagem para ${pessoa.nome}...`);
+
+      await client.sendMessage(GRUPO_ID, mensagem);
+
+      console.log(`✅ Mensagem enviada com sucesso para ${pessoa.nome}`);
+
+      enviadosHoje.add(chave);
+    }
+  }
+
+  if (!encontrou) {
+    console.log("ℹ️ Nenhum aniversariante hoje.");
+  }
+}
+
+// RODA A CADA 1 MINUTO
+setInterval(verificarAniversarios, 60 * 1000);
+
+// RESET DIÁRIO
+setInterval(() => {
+  enviadosHoje.clear();
+  console.log("🔄 Reset diário concluído (lista de enviados limpa)");
+}, 24 * 60 * 60 * 1000);
+
+// INICIAR BOT
 client.initialize();
