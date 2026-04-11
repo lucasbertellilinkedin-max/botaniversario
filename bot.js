@@ -35,7 +35,7 @@ const client = new Client({
   }
 });
 
-// 📱 QR CODE (SÓ TERMINAL, SEM qrcode LIB)
+// 📱 QR CODE
 client.on('qr', qr => {
   console.clear();
   console.log("📱 Escaneie o QR Code abaixo:");
@@ -57,13 +57,32 @@ client.on('ready', () => {
   }, 24 * 60 * 60 * 1000);
 });
 
+// ❌ AUTO RECONNECT
+client.on('disconnected', async (reason) => {
+  console.log('❌ Bot desconectado:', reason);
+  console.log('🔄 Tentando reconectar...');
+
+  try {
+    await client.destroy();
+    client.initialize();
+  } catch (err) {
+    console.log("❌ Erro ao reconectar:", err.message);
+  }
+});
+
 // 🔎 FUNÇÃO DE VERIFICAÇÃO
 async function verificarAniversarios() {
   console.log("🔎 Verificando aniversários...");
 
-  const hoje = new Date();
-  const dia = String(hoje.getDate()).padStart(2, '0');
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  // 🇧🇷 CORREÇÃO DE FUSO HORÁRIO (BRASIL)
+  const agora = new Date();
+
+  const dataBrasil = new Date(
+    agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+  );
+
+  const dia = String(dataBrasil.getDate()).padStart(2, '0');
+  const mes = String(dataBrasil.getMonth() + 1).padStart(2, '0');
   const hojeFormatado = `${dia}-${mes}`;
 
   let encontrou = false;
@@ -78,15 +97,19 @@ async function verificarAniversarios() {
         `🎉 Hoje é aniversário da ${pessoa.nome}!\n` +
         `Que Deus abençoe sua vida 🙏`;
 
-      console.log(`🎉 Enviando mensagem para ${pessoa.nome}...`);
+      console.log(`🎉 Preparando envio para ${pessoa.nome}...`);
 
-      try {
-        await client.sendMessage(GRUPO_ID, mensagem);
-        console.log(`✅ Mensagem enviada com sucesso para ${pessoa.nome}`);
+      if (client.info) {
+        try {
+          await client.sendMessage(GRUPO_ID, mensagem);
+          console.log(`✅ Mensagem enviada para ${pessoa.nome}`);
 
-        enviadosHoje.add(chave);
-      } catch (err) {
-        console.log("❌ Erro ao enviar mensagem:", err.message);
+          enviadosHoje.add(chave);
+        } catch (err) {
+          console.log("❌ Erro ao enviar mensagem:", err.message);
+        }
+      } else {
+        console.log("⚠️ Cliente não está pronto (não conectado)");
       }
     }
   }
